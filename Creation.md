@@ -51,7 +51,19 @@ This was then pushed to the Wiki repo.
 
 **4.3. Merge and push main repo.**
 
-The `wiki` branch seemed surplus to requirements. Will try removing it and renaming merger to wiki. Then move master to point at the same commit.
+The `wiki` branch seemed surplus to requirements. Will try removing it and renaming merger to wiki. Then move master to point at the same commit:
+
+```
+git checkout master
+git merge merger
+git push
+git branch -D wiki
+git branch -m merger wiki
+```
+
+`master` was also pushed to `origin`. Both repos are now synced up, with `master` pointing to `origin` and `wiki` pointing to `githubwiki`:
+
+![GitUp branch view](screenshots/GitUp-merged.png)
 
 ---
 <small>Last Edit: 20 Jul 2018</small>
