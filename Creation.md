@@ -65,11 +65,29 @@ git branch -m merger wiki
 
 ![GitUp branch view](screenshots/GitUp-merged.png)
 
+## Step 5. Keeping the repos synced
+To maintain the sync, it is just a case of merging and pushing the branches at appropriate times. e.g. after an commit to branch `master`:
+
+```
+git push
+git checkout wiki
+git merge master
+git push githubwiki HEAD:master
+```
+
+**Note:** the last push is a bit more complex than perhaps necessary as the remote branch has a different name to the local one. The wiki always displays the `master` branch, I think, whereas the main github page will have both branches. It probably therefore makes sense to link the `master` branch to the wiki and another branch to GitHub. Or just have the one master branch pushing to both? Going to try that now on `master` after a commit:
+
+```
+git push
+git push githubwiki
+```
+
+
 ---
 <small>Last Edit: 20 Jul 2018</small>
 
 
 [1]: https://github.com/
 [2]: https://github.com/slimsuite/EdwardsLabWiki/README.md
-[3]: ./Home.md
+[3]: ./Home
 [4]: https://github.com/slimsuite/EdwardsLabWiki/Creation.md
