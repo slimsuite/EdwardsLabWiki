@@ -16,6 +16,42 @@ I then made the initial version of this [Creation.md][4] file. Within this, I am
 
 ## Step 3: Create the wiki repository
 I use the **GitHub Desktop App** for generating my commits and **GitUp** for visualising the branching structure - **WARNING:** I intend to make use of branching for this repo!
+**NOTE:** I tried to do this by creating a new branch and pushing:
+```
+git branch wiki
+git checkout wiki
+git remote add githubwiki https://github.com/slimsuite/EdwardsLabWiki.wiki.git
+git push -u githubwiki master
+```
+This did not work!:
+```
+remote: Not Found
+fatal: repository 'https://github.com/slimsuite/EdwardsLabWiki.wiki.git/' not found
+```
+» Needed to create the wiki repo first on github. This was made with a `Temp.md` file to avoid conflicts when trying to merge repos. Here we go...
+
+## Step 4: Merge repos
+An inital attempt to push to the repo was rejected because it had files needing to be merged. I think the following can be simplified, but here is what I did...
+
+**4.1. Merge in the wiki**
+
+```
+git remote add githubwiki https://github.com/slimsuite/EdwardsLabWiki.wiki.git    
+git pull githubwiki master
+```
+This generate a merge in the `wiki` branch but it could still not be pushed to the repo.
+
+**4.2. Make a new merger branch**
+
+```
+git checkout -b merger --track githubwiki/master
+git merge wiki
+```
+This was then pushed to the Wiki repo.
+
+**4.3. Merge and push main repo.**
+
+The `wiki` branch seemed surplus to requirements. Will try removing it and renaming merger to wiki. Then move master to point at the same commit.
 
 ---
 <small>Last Edit: 20 Jul 2018</small>
