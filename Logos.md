@@ -1,0 +1,1 @@
+<img alt="Diploidocus logo" align="right" style="margin-left:10px;margin-bottom" width="150" src="https://github.com/slimsuite/diploidocus/blob/master/docs/diploidocus_logo.png">[Diploidocus: Diploid genome assembly analysis toolkit](https://github.com/slimsuite/diploidocus)
