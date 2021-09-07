@@ -361,17 +361,30 @@ to be split over multiple systems. (See **MMseqs Searches**, above.)
 ## Summarise taxonomic assignments for contamination assessments [taxonomy=T]
 
 Taxonomy mode combines the MMseqs2 `easy-taxonomy` with GFF parsing to perform taxonomic analysis of the input
-proteome and any subsets given by `taxsubsets=LIST`.
+proteome and any subsets given by `taxsubsets=LIST`. Taxonomic assignments are mapped onto genes as well as assembly scaffolds and (if `assembly=FILE` is given) contigs. 
 
-    mmseqs easy-taxonomy $QUERY $TARGETDB $PREFIX.easy tmp
+The first step is to run MMseqs2: 
 
-SAAGA will first read in the `*_report` file to build its internal taxonomy tree for the samples, remapping any
-"no rank" or "clade" ranks to the next highest level. (Exceptions being `unclassified`, `root`, and
-`cellular organisms`.) These levels are assigned by parsing the double-space indentations in the file.
+    mmseqs easy-taxonomy $PROTEOME $TAXDB $TAXBASE $TMPDIR
+
+Where `$PROTEOME` is the proteome provided with `seqin=FILE`, `$TAXDB` is a MMseqs2 taxonomic database (see below for creation), provided with `taxdb=FILE`, `$TAXBASE` is the `easy-taxonomy` output prefix, and `$TMPDIR` is the temporary directory (default `tmp`). If pre-existing results exist (`$TAXBASE._report` and `$TAXBASE_lca.tsv`) then these will be loaded, unless `force=T` is set. If MMseqs2 is not installed, pre-computed results *must* be provided. In principle, `report` and `lca.tsv` files generate by other tools should work as long as the format is the same.
+
+The core of taxonomy mode is the MMSeqs2 "Lowest Common Ancestor" (LCA) assignment, in which each sequence is associated with the lowest unabmigious taxonomic rank possible. Where amibiguity exists, a sequence will be assigned to a higher level. Higher levels also receive all the taxonomic assignments of their daughter taxa, and so the sequence count for any given taxonomic group will always be equal or greater than its lower subdivisions. Conceptually, SAAGA separates out the counts into `taxnum`, which are counts at that level or below, and `taxpure`, which are the numbers assigned specifically to that level. (i.e. `taxnum` will be the sum of `taxpure` for that taxonomic group and all lower divisions.) See the MMseqs2 documentation for more details.
+
+### Taxonomy overview
+
+SAAGA will first read in the `*_report` file to build its internal taxonomy tree for the samples. By default, mmseqs will report all possible taxonomic levels, and SAAGA will retain the following: 
+
+    species, species subgroup, species group, subgenus, genus, subtribe, tribe, subfamily, family, superfamily, parvorder, infraorder, suborder, order, superorder, infraclass, subclass, class, superclass, subphylum, phylum, superphylum, subkingdom, kingdom, superkingdom
+
+This can be reduced further by specifying a subset of taxonomic levels of interest with `taxlevels=LIST`. Any missing levels, along with 
+"no rank" or "clade" taxa (except `unclassified`, `root`, and `cellular organisms`), will be mapped to the next highest taxonomic level. Any MMseqs2 assignments to that level will be transferred to the higher level.
+
+
+
 
 Next, the `*_lca.tsv` file is read and mapped onto the `gffin=FILE` GFF file to assign proteins to genes and
-sequences. The lowest-level hit for each gene will be kept, and any "no rank" or "clade" assignments mapped onto
-the next highest level with a defined rank. Gene ratings will then be summed for each sequence, and the dominant
+sequences. The lowest-level hit for each gene will be kept, remapping to `taxlevels` as required. Gene ratings will then be summed for each sequence, and the dominant
 classification for each taxonomic level established for (a) each sequence, and (b) the whole dataset. These
 collated ratings will be output to `*.lca_genes.tsv`, `*.lca_assembly.tsv` and `*.saaga_report`.
 
@@ -399,7 +412,7 @@ taxlevels=LIST  : List of taxonomic levels to report (* for superkingdom and bel
 taxwarnrank=X   : Taxonomic rank (and above) to warn when deviating for consensus [family]
 ```
 
-If no proteins are given, ORFs will be generated with default settings 'minorf=100', 'rftran=6', 'terminorf=50'.
+
 
 ### Main taxonomy outputs
 
@@ -407,10 +420,11 @@ Outputs will be given a file prefix set by `taxbase=X`. By default, this will be
 `$SEQBASE` is the basename of `seqin=FILE` and `$TAXADB` is the taxonomy database set by `taxdb=FILE`.
 
 The main mmseqs `easy-taxonomy` output will generate:
-* *_lca.tsv = best assignments per protein sequence (protein, taxid, rank, taxname)
-* *_report = text summary of overall taxonomy that can be loaded by Pavian etc.
-* *_tophit_aln = top database hits for each protein (not currently used)
-* *_tophit_report = taxonomic classification of the top hit proteins
+
+* `*_lca.tsv` = best assignments per protein sequence (protein, taxid, rank, taxname): required.
+* `*_report` = text summary of overall taxonomy that can be loaded by Pavian etc.: required.
+* `*_tophit_aln` = top database hits for each protein (not currently used): not required.
+* `*_tophit_report` = taxonomic classification of the top hit proteins: not required.
 
 If `taxbyseq=T` then an addition `*.taxbyseq.tsv` file will be produced, with the following fields:
 * `seqname` = assembly sequence name
@@ -424,6 +438,45 @@ If `taxbyseq=T` then an addition `*.taxbyseq.tsv` file will be produced, with th
 * `taxnum` = number of genes assigned to this rank or lower
 * `taxpure` = number of genes assigned to this rank specifically
 
+
+```
+-rw-rw-r-- 1 z3452659 ausplant 8.2M Sep  6 14:12 RargNCBI.orfeasy_lca.tsv
+-rw-rw-r-- 1 z3452659 ausplant 186K Sep  6 14:12 RargNCBI.orfeasy_report
+-rw-rw-r-- 1 z3452659 ausplant 107M Sep  6 14:23 RargNCBI.orfeasy_tophit_report
+-rw-rw-r-- 1 z3452659 ausplant 236M Sep  6 14:24 RargNCBI.orfeasy_tophit_aln
+-rw-rw-r-- 1 z3452659 ausplant  21K Sep  6 14:24 RargNCBI.orfsaaga.sys.log
+-rw-rw-r-- 1 z3452659 ausplant  11M Sep  6 14:25 RargNCBI.orfeasy.lca_genes.tsv
+-rw-rw-r-- 1 z3452659 ausplant 7.5M Sep  6 14:25 RargNCBI.orfeasy.taxbyseq.tsv
+-rw-rw-r-- 1 z3452659 ausplant  79K Sep  6 14:25 RargNCBI.orfeasy.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant  45K Sep  6 14:25 RargNCBI.orfeasy.RargNCBI.dirty.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant  48K Sep  6 14:26 RargNCBI.orfeasy.RargNCBI.norub.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant 6.3K Sep  6 14:26 RargNCBI.orfeasy.RargNCBI.rescue.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant  51K Sep  6 14:26 RargNCBI.orfeasy.RargNCBI.clean.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant 1.8M Sep  6 14:26 RargNCBI.orfeasy.consensus.tsv
+-rw-rw-r-- 1 z3452659 ausplant 232K Sep  6 14:26 RargNCBI.orfeasy.geneseq.id
+-rw-rw-r-- 1 z3452659 ausplant 113K Sep  6 14:26 RargNCBI.orfeasy.goodtax.id
+-rw-rw-r-- 1 z3452659 ausplant 338M Sep  6 14:26 RargNCBI.orfeasy.goodtax.fasta
+-rw-rw-r-- 1 z3452659 ausplant  16K Sep  6 14:26 RargNCBI.orfeasy.badtax.id
+-rw-rw-r-- 1 z3452659 ausplant  39M Sep  6 14:26 RargNCBI.orfeasy.badtax.fasta
+-rw-rw-r-- 1 z3452659 ausplant 104K Sep  6 14:26 RargNCBI.orfeasy.notax.id
+-rw-rw-r-- 1 z3452659 ausplant  22M Sep  6 14:26 RargNCBI.orfeasy.notax.fasta
+-rw-rw-r-- 1 z3452659 ausplant 189K Sep  6 14:27 RargNCBI.orfeasy.goodtax.fasta.index
+-rw-rw-r-- 1 z3452659 ausplant  25K Sep  6 14:27 RargNCBI.orfeasy.badtax.fasta.index
+-rw-rw-r-- 1 z3452659 ausplant 164K Sep  6 14:27 RargNCBI.orfeasy.notax.fasta.index
+-rw-rw-r-- 1 z3452659 ausplant  642 Sep  6 14:27 RargNCBI.orfeasy.seqsummary.tsv
+-rw-rw-r-- 1 z3452659 ausplant  49K Sep  6 14:28 RargNCBI.orfeasy.goodtax.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant  68K Sep  6 14:28 RargNCBI.orfeasy.badtax.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant 116K Sep  6 14:28 RargNCBI.orfsaaga.log
+-rw-rw-r-- 1 z3452659 ausplant 2.2M Sep  7 16:49 RargNCBI.easy.taxbyseq.tsv
+-rw-rw-r-- 1 z3452659 ausplant  24K Sep  7 16:49 RargNCBI.easy.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant 2.0M Sep  7 16:49 RargNCBI.easy.lca_genes.tsv
+-rw-rw-r-- 1 z3452659 ausplant 3.2M Sep  7 16:49 RargNCBI.easy.lca_genes.gff
+-rw-rw-r-- 1 z3452659 ausplant  13K Sep  7 16:49 RargNCBI.easy.RargNCBI.dirty.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant  13K Sep  7 16:49 RargNCBI.easy.RargNCBI.norub.saaga_report.tsv
+-rw-rw-r-- 1 z3452659 ausplant 9.3K Sep  7 16:49 RargNCBI.saaga.log
+```
+
+
 ### Sequence subset analysis
 
 In addition to the main output for the whole proteome, any subsets given by `taxsubsets=LIST`
@@ -431,3 +484,28 @@ In addition to the main output for the whole proteome, any subsets given by `tax
 These can be fasta files or lists of IDs, but they must
 match the assembly sequence names in the GFF file. Outputs
 
+
+### Generating a taxonomic database 
+
+
+```
+module add blast+/2.11.0
+blastdbcmd -db /data/bio/ncbi/current/nr -entry all > ncbinr.faa
+blastdbcmd -db /data/bio/ncbi/current/nr -entry all -outfmt "%a %T" > ncbinr.faa.taxidmapping
+Finally, the createdb and createtaxdb modules use the information to create a complete MMSeqs2 database:
+
+module add mmseqs2/13-45111
+mmseqs createdb ncbinr.faa ncbinr.faaDB
+mmseqs createtaxdb ncbinr.faaDB tmp --ncbi-tax-dump taxonomy/ --tax-mapping-file ncbinr.faa.taxidmapping
+mmseqs createindex ncbinr.faaDB tmp
+
+mmseqs filtertaxseqdb ncbinr.faaDB seqTaxNoQueryDB --taxon-list '!178133,!38626'
+
+TAXDB=/srv/scratch/basenji/Contamination-Sep21/data/2021-03-09.NCBITaxaDB/seqTaxNoQueryDB
+```
+
+### Simple ORF mode
+
+If no proteins are given, ORFs will be generated by `SeqSuite` with default settings `minorf=100 rftran=6 terminorf=50 orfgaps=F`, i.e. ORFs of 100+ amino acids from all six reading frames, or 50+ amino acids if truncated at the end of a sequence. ORFs will not span assembly gaps, and any ambiguous (`X`) translations will be replaced with stop codons (`*`), unless `orfgaps=T` is set. Note that, due to introns, it is expected that these ORFs will often represent partial coding sequences, and many will be random junk translations. The idea of ORF mode is to provide a quick, crude impression of the taxonomic profile.
+
+In ORF mode, each ORF is assumed to represent a different gene, although this may not be the case. Currently, `SeqSuite` will not generate a GFF file for the ORFs. As a result, the `taxbycontig` output is not available.
