@@ -378,7 +378,7 @@ SAAGA will first read in the `*_report` file to build its internal taxonomy tree
     species, species subgroup, species group, subgenus, genus, subtribe, tribe, subfamily, family, superfamily, parvorder, infraorder, suborder, order, superorder, infraclass, subclass, class, superclass, subphylum, phylum, superphylum, subkingdom, kingdom, superkingdom
 
 This can be reduced further by specifying a subset of taxonomic levels of interest with `taxlevels=LIST`. Any missing levels, along with 
-"no rank" or "clade" taxa (except `unclassified`, `root`, and `cellular organisms`), will be mapped to the next highest taxonomic level. Any MMseqs2 assignments to that level will be transferred to the higher level.
+"no rank" or "clade" taxa (except `unclassified`, `root`, and `cellular organisms`), will be mapped to the next highest taxonomic level. Any MMseqs2 assignments to that level will be transferred to the higher level. Any taxa failing to meet the `mintaxnum=INT` threshold (default=2) will also be mapped onto higher levels.
 
 
 
